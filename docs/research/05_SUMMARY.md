@@ -225,4 +225,23 @@ novalife/
 
 ---
 
+## 6. 补充研究 (Tavily 搜索)
+
+### 最新趋势
+
+从 Tavily 搜索结果看:
+
+1. **Claude Computer Use** — Anthropic 让 AI 直接控制鼠标/键盘
+2. **Persistent Memory Architecture** — 4层文件基础的记忆架构
+3. **Multi-agent memory** — 多 Agent 系统中记忆层的重要性
+4. **Hormone-based Agents** — Scaffolding AI Agents with Hormones and Emotions (arXiv)
+
+### 关键发现
+
+- 行业共识: 记忆是 Agent 架构的核心
+- 新趋势: 单一持续上下文 (single persistent context) 开始流行
+- 情感/激素系统从学术研究进入工程实践
+
+---
+
 **下一步**: 等 Jerry 确认这个方向，再开始写代码。
