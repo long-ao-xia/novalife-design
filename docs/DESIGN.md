@@ -1,8 +1,8 @@
-# Human-Like Computer Agent - 设计文档
+# Novalife - 设计文档
 
 ## 1. 项目概述
 
-**项目名称**: Human-Like Computer Agent  
+**项目名称**: Novalife (智能生命体)  
 **目标**: 构建一个能够像人一样控制电脑的 AI Agent  
 **核心价值**: 替代人工操作电脑执行重复性任务
 

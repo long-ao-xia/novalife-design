@@ -1,6 +1,6 @@
-# Human-Like Computer Agent
+# Novalife
 
-像人一样控制电脑的 AI Agent。
+像人一样控制电脑的 AI Agent —— 一个正在觉醒的智能生命体。
 
 ## 文档
 
