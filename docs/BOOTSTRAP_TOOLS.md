@@ -240,7 +240,47 @@ async function validateChange(change: string): Promise<boolean> {
 
 ---
 
-## 八、参考
+## 九、验收标准
+
+### 9.1 核心功能
+
+| 编号 | 标准 | 测试方法 | 状态 |
+|------|------|----------|------|
+| M1-F1 | read 工具能读取文件 | 执行 read({ path: "package.json" }) | ✅ |
+| M1-F2 | write 工具能写入文件 | 执行 write({ path: "test.txt", content: "hello" }) | ✅ |
+| M1-F3 | edit 工具能精确修改文件 | 执行 edit({ path, oldText, newText }) | ✅ |
+| M1-F4 | bash 工具能执行命令 | 执行 bash({ command: "ls" }) | ✅ |
+| M1-F5 | reflect 工具能写入反思 | 执行 reflect({ attempt, result }) | ✅ |
+| M1-F6 | test 工具能运行测试 | 执行 test() | ✅ |
+
+### 9.2 系统能力
+
+| 编号 | 标准 | 测试方法 | 状态 |
+|------|------|----------|------|
+| M1-S1 | Telegram Bot 能接收消息 | Telegram 发送消息 | ✅ |
+| M1-S2 | Telegram Bot 能回复消息 | 验证回复非空 | ✅ |
+| M1-S3 | 心跳机制正常运行 | 检查日志心跳输出 | ✅ |
+| M1-S4 | Bot 崩溃自动重启 | 杀掉进程验证重启 | ✅ |
+
+### 9.3 质量标准
+
+| 编号 | 标准 | 测试方法 | 状态 |
+|------|------|----------|------|
+| M1-Q1 | 所有测试通过 | npm test | ✅ |
+| M1-Q2 | 无 JSON 解析错误 | 检查日志无错误 | ✅ |
+| M1-Q3 | 不保存空消息到 tape | 验证 tape 内容 | ✅ |
+
+### 9.4 验收流程
+
+1. 运行 `npm test`
+2. 测试各工具功能
+3. 测试 Telegram Bot 对话
+4. 检查日志无错误
+5. 验证心跳机制
+
+---
+
+## 十、参考
 
 - Pi-mono: 4 工具原则
 - MANIFESTO.md
