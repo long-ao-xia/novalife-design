@@ -208,11 +208,11 @@ async function validateChange(change: string): Promise<boolean> {
 
 ## 六、M1 交付标准
 
-- [ ] 4 工具可用 (read, write, edit, bash)
-- [ ] Agent Loop 循环直到完成
-- [ ] 极简 system prompt
-- [ ] 反思工具 (写入 REFLECTIONS.md)
-- [ ] 验证工具 (运行测试)
+- [x] 4 工具可用 (read, write, edit, bash)
+- [x] Agent Loop 循环直到完成
+- [x] 极简 system prompt
+- [x] 反思工具 (写入 REFLECTIONS.md)
+- [x] 验证工具 (运行测试)
 
 ### 验证方式
 
@@ -226,17 +226,16 @@ async function validateChange(change: string): Promise<boolean> {
 
 ### 当前任务
 
-- [ ] 实现 4 工具
-- [ ] 实现 Agent Loop
-- [ ] 添加反思工具
-- [ ] 添加验证工具
+- [x] 实现 4 工具
+- [x] 实现 Agent Loop
+- [x] 添加反思工具
+- [x] 添加验证工具
 
-### 风险
+### 进展
 
-| 风险 | 应对 |
+| 日期 | 进展 |
 |------|------|
-| LLM 能力不足 | 换用更强模型 |
-| 执行危险命令 | 用户确认机制 |
+| 2026-03-07 | M1 核心功能完成，14 tests passed |
 
 ---
 

@@ -33,11 +33,13 @@
 
 > 阶段：单一 Agent
 
-- [ ] 4 工具集 (read, write, edit, bash)
-- [ ] 极简 system prompt (< 1000 tokens)
-- [ ] Agent Loop (循环直到完成)
-- [ ] 反思写入文件
-- [ ] 验证机制 (测试运行)
+- [x] 4 工具集 (read, write, edit, bash)
+- [x] 极简 system prompt (< 1000 tokens)
+- [x] Agent Loop (循环直到完成)
+- [x] 反思写入文件
+- [x] 验证机制 (测试运行)
+
+**状态**: ✅ 完成 (14 tests passed)
 
 **关键问题**: 机器能自己改进自己吗？
 
