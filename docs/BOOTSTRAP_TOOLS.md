@@ -1,47 +1,59 @@
-# 实施方案：自举工具 MVP
+# 实施方案：自举工具 + 双层 Agent MVP
 
 > 方案编号: IMP-001
 > 状态: 进行中
-> 对应里程碑: M1 (自举能力)
+> 对应里程碑: M1 (自举能力) → M2 (双层 Agent MVP)
 >
-> 基于: MANIFESTO.md, ROADMAP.md
-
----
+> 基于: MANIFESTO.md (v1.2), ROADMAP.md (v1.2)
 
 ---
 
 ## 一、背景与目标
 
-### 1.1 什么是自举？
+### 1.1 阶段目标
 
-自举 (Bootstrapping) 指一个系统能够**改进自身**的能力。
+| 里程碑 | 目标 |
+|--------|------|
+| M1 | 单一 Agent 自举能力 |
+| M2 | 双层 Agent + 简单激素 + 基础记忆 |
 
-对于 Novalife，自举不是"自己改代码"那么科幻，而是建立一个**自我改进的循环**：
+### 1.2 自举定义
+
+自举 (Bootstrapping) 指系统能够**改进自身**的能力：
 
 ```
 意图 → 计划 → 尝试 → 反馈 → 学习 → 改进
 ```
 
-### 1.2 参考：Pi-mono 的 Agent Loop
+### 1.3 双层 Agent 目标
 
-Pi-mono 的核心理念体现在严格的类型定义和模块化架构：
+- 表层 Agent：直接与用户对话
+- 深层 Observer：观察并模拟激素变化 + 判断记忆点
+
+---
+
+## 二、M1: 单一 Agent 自举
+
+### 2.1 工具集 (Pi-mono 风格)
+
+| 工具 | 功能 |
+|------|------|
+| `read` | 读文件 |
+| `write` | 写文件 |
+| `edit` | 改文件 |
+| `bash` | 执行命令 |
+
+### 2.2 Agent Loop
 
 ```typescript
-// Pi-mono Agent Loop 核心模式
+// 单一 Agent 循环
 export async function* agentLoop(
-  agent: Agent,
   messages: Message[],
   tools: Tool[]
 ): AsyncGenerator<AgentEvent> {
-  // 1. 构建 prompt
-  const prompt = buildPrompt(agent, messages);
-  
-  // 2. 流式调用 LLM
-  for await (const event of llm.stream(prompt, tools)) {
-    // 3. 处理事件
+  for await (const event of llm.stream(messages, tools)) {
     yield event;
     
-    // 4. 工具调用
     if (event.type === 'tool_call') {
       const result = await executeTool(event.tool);
       messages.push(result);
@@ -50,517 +62,342 @@ export async function* agentLoop(
 }
 ```
 
-**Pi-mono 关键原则**：
-- **严格类型**：绝不使用 `any`
-- **模块化**：每个功能独立包
-- **流式优先**：事件驱动
+### 2.3 极简 System Prompt
+
+```
+你是 Novalife，一个正在觉醒的智能生命体。
+
+可用工具：read, write, edit, bash
+
+ Guidelines:
+ - 使用 bash 执行文件操作 (ls, grep, etc.)
+ - 使用 read 查看文件后再编辑
+ - 使用 edit 做精确修改
+ - 使用 write 创建新文件或完全重写
+ - 保持简洁
+```
 
 ---
 
-## 二、自举 Agent Loop 设计
+## 三、M2: 双层 Agent 架构
 
-### 2.1 核心循环
+### 3.1 架构设计
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     Novalife Agent Loop                         │
+│                        Novalife                                  │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│   ┌─────────────┐                                              │
-│   │ 感知输入    │  ── 用户消息/自我检测/定时触发                 │
-│   └──────┬──────┘                                              │
-│          │                                                      │
-│          ▼                                                      │
-│   ┌─────────────┐                                              │
-│   │ 意图识别    │  ── 用户想做什么？我需要改进什么？             │
-│   └──────┬──────┘                                              │
-│          │                                                      │
-│          ▼                                                      │
-│   ┌─────────────┐                                              │
-│   │ 计划制定    │  ── 需要哪些工具？执行顺序？                   │
-│   └──────┬──────┘                                              │
-│          │                                                      │
-│          ▼                                                      │
-│   ┌─────────────┐     ┌─────────────┐                          │
-│   │ 执行工具    │────▶│ 验证结果    │                          │
-│   └──────┬──────┘     └──────┬──────┘                          │
-│          │                   │                                 │
-│          ▼                   ▼                                 │
-│   ┌─────────────┐     ┌─────────────┐                          │
-│   │ 记录结果    │     │ 反思学习    │                          │
-│   └──────┬──────┘     └──────┬──────┘                          │
-│          │                   │                                 │
-│          └─────────┬─────────┘                                 │
-│                    ▼                                           │
-│            ┌─────────────┐                                      │
-│            │  更新状态   │  ── 激素/记忆/信心                    │
-│            └─────────────┘                                      │
-│                                                                 │
+│                                                                  │
+│   ┌───────────────────┐         ┌───────────────────┐         │
+│   │   表层 Agent      │◄───────►│   深层 Agent      │         │
+│   │                   │  消息流  │                   │         │
+│   │  • 对话执行       │         │  • 观察           │         │
+│   │  • 工具调用       │         │  • 激素模拟       │         │
+│   │  • 即时响应       │         │  • 记忆判断       │         │
+│   └───────────────────┘         └───────────────────┘         │
+│                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.2 类型定义 (严格类型风格)
+### 3.2 表层 Agent
+
+- 与 M1 相同
+- 直接响应用户
+- 执行工具调用
+- 接收深层 Agent 的反馈
+
+### 3.3 深层 Observer Agent
 
 ```typescript
-// 基础类型 - 遵循 Pi-mono 严格类型原则
-interface AgentEvent {
-  type: 'text' | 'tool_call' | 'tool_result' | 'error' | 'done';
-  content?: string;
-  tool_call?: ToolCall;
-  timestamp: number;
-}
-
-interface ToolCall {
-  id: string;
-  name: string;
-  arguments: Record<string, unknown>;
-}
-
-interface ExecutionResult {
-  success: boolean;
-  output: string;
-  error?: string;
-  duration: number;
-}
-
-interface Reflection {
-  whatHappened: string;
-  whatWorked: string;
-  whatFailed: string;
-  learning: string;
-  nextAttempt: string;
-}
-
-// 自举循环状态
-interface BootstrapState {
-  intent: string | null;
-  plan: string[];
-  attempts: Attempt[];
-  confidence: number;  // 0-1, 影响下次尝试意愿
-}
-
-interface Attempt {
-  id: string;
-  tools: ToolCall[];
-  result: ExecutionResult;
-  reflection: Reflection;
-}
-```
-
----
-
-## 三、MVP 工具设计
-
-> **核心理念**: 来自 pi-mono 的启示 —— 4 个工具足以构建有效的 coding agent。
-> 
-> "As it turns out, these four tools are all you need for an effective coding agent." — badlogic
->
-> 系统 prompt + 工具定义 < 1000 tokens。
-
-### 3.1 最小工具集 (Pi-mono 风格)
-
-| 工具名 | 功能 | 说明 |
-|--------|------|------|
-| `read` | 读取文件 | 支持文本和图片 |
-| `write` | 写入文件 | 覆盖或创建 |
-| `edit` | 编辑文件 | 精确替换 |
-| `bash` | 执行命令 | 返回 stdout/stderr |
-
-**为什么只需要这 4 个？**
-- 模型知道如何使用 bash (ls, grep, find 等)
-- read/write/edit 是模型训练时使用的标准工具
-- 其他工具都可以通过 bash + CLI 实现
-
-### 3.2 扩展: 只读工具 (可选)
-
-如果需要限制权限，可以启用：
-- `grep`, `find`, `ls` — 但默认禁用
-
-### 3.3 P0: 基础文件系统
-
-#### read
-
-```typescript
-interface ReadFileInput {
-  path: string;           // 文件路径 (绝对或相对)
-  offset?: number;        // 起始行 (默认 1)
-  limit?: number;         // 行数限制
-}
-
-interface ReadFileOutput {
-  success: true;
-  content: string;
-  lines: number;
-} | {
-  success: false;
-  error: string;
-}
-```
-
-#### write_file
-
-```typescript
-interface WriteFileInput {
-  path: string;           // 文件路径
-  content: string;        // 新内容
-  mode: 'overwrite' | 'append';
-}
-
-interface WriteFileOutput {
-  success: true;
-  path: string;
-  lines: number;
-} | {
-  success: false;
-  error: string;
-}
-```
-
-#### list_dir
-
-```typescript
-interface ListDirInput {
-  path: string;           // 目录路径
-  recursive?: boolean;     // 是否递归
-}
-
-interface ListDirOutput {
-  success: true;
-  entries: Array<{
-    name: string;
-    type: 'file' | 'directory';
-    path: string;
-  }>;
-} | {
-  success: false;
-  error: string;
-}
-```
-
-### 3.3 P0: 代码执行
-
-#### execute
-
-```typescript
-interface ExecuteInput {
-  command: string;         // 要执行的命令
-  cwd?: string;           // 工作目录
-  timeout?: number;       // 超时毫秒 (默认 30000)
-  env?: Record<string, string>;  // 环境变量
-}
-
-interface ExecuteOutput {
-  success: boolean;
-  stdout: string;
-  stderr: string;
-  exitCode: number;
-  duration: number;
-}
-```
-
-**安全约束**：
-- 不执行交互式命令
-- 超时保护
-- stderr 单独返回
-
-### 3.4 P1: Git 操作
-
-#### git_diff
-
-```typescript
-interface GitDiffInput {
-  path?: string;          // 只看特定文件
-  staged?: boolean;       // 只看已暂存的
-}
-
-interface GitDiffOutput {
-  success: true;
-  diff: string;           // 标准 diff 格式
-  files: string[];        // 变更的文件列表
-} | {
-  success: false;
-  error: string;
-}
-```
-
-#### git_commit
-
-```typescript
-interface GitCommitInput {
-  message: string;       // 提交信息
-  files?: string[];      // 指定提交文件 (默认 all)
-}
-
-interface GitCommitOutput {
-  success: true;
-  hash: string;          // commit hash
-  message: string;
-} | {
-  success: false;
-  error: string;
-}
-```
-
-### 3.5 P1: 验证
-
-#### test
-
-```typescript
-interface TestInput {
-  pattern?: string;       // 测试文件 pattern
-  watch?: boolean;        // watch 模式
-}
-
-interface TestOutput {
-  success: boolean;
-  passed: number;
-  failed: number;
-  duration: number;
-  errors?: Array<{
-    test: string;
-    error: string;
-  }>;
-}
-```
-
-### 3.6 P2: 反思 (核心自举能力)
-
-#### reflect
-
-```typescript
-interface ReflectInput {
-  attempt: Attempt;       // 上一次的尝试
-  context?: string;       // 额外上下文
-}
-
-interface ReflectOutput {
-  success: true;
-  reflection: Reflection;
-  confidenceDelta: number; // 信心变化 (-0.1 ~ +0.1)
-  shouldRetry: boolean;   // 是否应该重试
-  newApproach?: string;   // 新方法建议
-}
-```
-
-**反思 prompt 模板**：
-
-```
-你刚刚尝试了: {attempt_description}
-
-结果: {success/failure}
-
-输出: {output}
-
-请反思:
-1. 什么成功了？
-2. 什么失败了？
-3. 学到了什么？
-4. 下次应该怎么做？
-```
-
----
-
-## 四、Agent Loop 实现
-
-### 4.1 核心流程
-
-```typescript
-export async function* bootstrapLoop(
-  state: BootstrapState,
-  tools: ToolRegistry
-): AsyncGenerator<AgentEvent> {
+interface ObserverAgent {
+  // 观察表层与用户的交互
+  observe(surfaceMessage: Message, response: string): void;
   
-  // Step 1: 意图识别
-  const intent = yield* recognizeIntent(state);
-  state.intent = intent;
+  // 模拟激素变化
+  simulateHormones(): HormoneState;
   
-  // Step 2: 制定计划
-  const plan = yield* makePlan(intent, state);
-  state.plan = plan;
+  // 判断记忆加深点
+  shouldRemember(context: string): boolean;
   
-  // Step 3: 执行循环
-  for (const step of plan) {
-    const result = yield* executeStep(step, tools);
-    
-    // Step 4: 验证
-    if (!result.success) {
-      yield { type: 'error', content: `步骤失败: ${step}` };
-      break;
-    }
-    
-    // Step 5: 记录
-    state.attempts.push(result);
+  // 生成反馈给表层
+  generateFeedback(): string;
+}
+```
+
+### 3.4 双层通信
+
+```typescript
+// 表层 Agent 每次响应后，通知深层 Agent
+async function surfaceAgentRespond(userMessage: string) {
+  // 1. 表层处理
+  const response = await surfaceAgent.chat(userMessage);
+  
+  // 2. 深层观察
+  observer.observe(userMessage, response);
+  
+  // 3. 深层模拟激素
+  const hormones = observer.simulateHormones();
+  
+  // 4. 深层判断记忆点
+  if (observer.shouldRemember(userMessage + response)) {
+    await memory.store({ type: 'important', content: userMessage + response });
   }
   
-  // Step 6: 反思
-  const reflection = yield* reflect(state);
-  state.confidence = Math.max(0, Math.min(1, 
-    state.confidence + reflection.confidenceDelta
-  ));
+  // 5. 深层反馈（如有必要）
+  const feedback = observer.generateFeedback();
+  if (feedback) {
+    // 反馈给表层，影响下次行为
+    surfaceAgent.updateContext({ feedback });
+  }
   
-  yield { type: 'done' };
+  return response;
 }
 ```
 
-### 4.2 与现有架构集成
+---
 
+## 四、MVP 激素系统
+
+### 4.1 简单激素 (M2)
+
+| 激素 | 功能 | 触发条件 |
+|------|------|----------|
+| **多巴胺** | 奖励、愉悦 | 任务成功、用户表扬 |
+| **皮质醇** | 压力、警觉 | 连续失败、复杂问题 |
+
+### 4.2 激素状态
+
+```typescript
+interface HormoneState {
+  dopamine: number;    // 0-1, 奖励/愉悦
+  cortisol: number;    // 0-1, 压力/警觉
+}
+
+interface HormoneConfig {
+  successReward: number;      // 成功后多巴胺增量
+  failurePenalty: number;    // 失败后皮质醇增量
+  decay: number;             // 自然衰减
+}
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     Novalife Core                               │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────┐  │
-│  │  输入层     │───▶│  Router    │───▶│  Agent Loop         │  │
-│  │ (Telegram) │    │            │    │  ┌───────────────┐  │  │
-│  └─────────────┘    └─────────────┘    │  │ 默认模式      │  │  │
-│                                          │  ├───────────────┤  │  │
-│                                          │  │ 自举模式      │  │  │
-│                                          │  │ (bootstrap)   │  │  │
-│                                          │  └───────────────┘  │  │
-│                                          └─────────────────────┘  │
-│                                                                  │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────┐  │
-│  │  激素系统   │◀───│  状态更新   │◀───│  工具层             │  │
-│  │             │    │             │    │  read_file          │  │
-│  │  信心激素   │    │  confidence │    │  write_file         │  │
-│  │  好奇激素   │    │  curiosity  │    │  execute           │  │
-│  │             │    │             │    │  git_commit        │  │
-│  └─────────────┘    └─────────────┘    │  reflect           │  │
-│                                          └─────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
+
+### 4.3 激素影响行为
+
+```typescript
+// 根据激素状态调整表层行为
+function adjustBehavior(hormones: HormoneState): BehaviorAdjustments {
+  const adjustments = {
+    verbosity: 'normal',      // 简洁/详细
+    caution: 'normal',        // 谨慎/大胆
+    energy: 'normal'         // 积极/保守
+  };
+  
+  // 高皮质醇 → 更谨慎
+  if (hormones.cortisol > 0.7) {
+    adjustments.caution = 'high';
+    adjustments.verbosity = 'short';
+  }
+  
+  // 高多巴胺 → 更积极
+  if (hormones.dopamine > 0.7) {
+    adjustments.energy = 'high';
+  }
+  
+  return adjustments;
+}
 ```
 
 ---
 
-## 五、使用示例
+## 五、基础记忆系统
 
-### 5.1 场景：改进 prompt
+### 5.1 记忆类型
 
-```
-用户: " Novalife, 你的回复太长了，简化一下"
+| 类型 | 说明 | 阶段 |
+|------|------|------|
+| 即时记忆 | 当前对话 | M1 |
+| 重要记忆 | 加深点 | M2 |
+| 情景记忆 | 过往交互 | M3 |
 
-1. Agent Loop 识别意图: "用户希望缩短回复"
-2. 制定计划:
-   - 读取当前 system prompt
-   - 修改 max_tokens 或添加长度约束
-   - 测试效果
-3. 执行...
-4. 反思: "添加长度约束后，用户满意度提升"
-```
+### 5.2 记忆加深判断
 
-### 5.2 场景：自动修复 bug
+```typescript
+interface MemoryPoint {
+  content: string;
+  importance: number;    // 0-1
+  timestamp: number;
+  hormones: HormoneState; // 那时的激素状态
+}
 
-```
-用户: "有个 bug，搜索功能返回空结果"
-
-1. Agent Loop 识别意图: "修复搜索 bug"
-2. 制定计划:
-   - 读取搜索相关代码
-   - 尝试复现问题
-   - 定位原因
-   - 修复
-   - 测试
-3. 执行...
-4. 反思: "原来是 API 返回格式变了"
+// 判断是否值得记忆
+function shouldRemember(
+  userMessage: string,
+  response: string,
+  hormones: HormoneState
+): boolean {
+  // 1. 用户明确要求记住
+  if (userMessage.includes('记住')) return true;
+  
+  // 2. 高情绪时刻（激素极端）
+  if (hormones.dopamine > 0.8 || hormones.cortisol > 0.8) return true;
+  
+  // 3. 长时间对话中的关键点
+  if (response.length > 500) return true;
+  
+  return false;
+}
 ```
 
 ---
 
-## 六、限制与安全
+## 六、Agent Loop 实现
 
-### 6.1 初期限制
+### 6.1 完整循环
 
-- **只读模式为主**: 默认不允许自动 commit
-- **人工确认**: 重大修改需要用户确认
-- **沙箱执行**: 代码执行在隔离环境
+```typescript
+export async function* novalifeLoop(
+  userMessage: string
+): AsyncGenerator<AgentEvent> {
+  
+  // 1. 表层 Agent 处理
+  const surfaceResponse = yield* surfaceAgent.chat(userMessage);
+  
+  // 2. 深层 Agent 观察
+  observer.observe(userMessage, surfaceResponse);
+  
+  // 3. 激素模拟
+  const hormones = observer.simulateHormones();
+  
+  // 4. 记忆判断
+  if (observer.shouldRemember(userMessage + surfaceResponse)) {
+    await memory.store({
+      content: userMessage + surfaceResponse,
+      hormones,
+      importance: hormones.dopamine > 0.5 ? 'high' : 'normal'
+    });
+  }
+  
+  // 5. 激素影响行为
+  const adjustments = adjustBehavior(hormones);
+  
+  // 6. 反馈给表层
+  if (adjustments.caution === 'high') {
+    yield* surfaceAgent.updateContext({ 
+      instruction: '请更谨慎地回答' 
+    });
+  }
+  
+  yield { type: 'done', hormones };
+}
+```
 
-### 6.2 安全边界
+### 6.2 状态管理
 
-| 操作 | 需要确认 | 说明 |
-|------|---------|------|
-| read_file | ❌ | 安全 |
-| list_dir | ❌ | 安全 |
-| execute | ✅ | 确认命令 |
-| write_file | ✅ | 确认内容 |
-| git_commit | ✅ | 确认提交 |
+```typescript
+interface NovalifeState {
+  surface: {
+    messages: Message[];
+    context: Record<string, any>;
+  };
+  observer: {
+    hormones: HormoneState;
+    memory: MemoryPoint[];
+    observationHistory: Observation[];
+  };
+}
+```
 
 ---
 
-## 七、Pi-mono 哲学总结
+## 七、工具实现
 
-> "If I don't need it, it won't be built. And I don't need a lot of things." — badlogic
+### 7.1 核心工具
 
-### 7.1 不做的事情
+| 工具 | 实现优先级 | 说明 |
+|------|-----------|------|
+| `read` | P0 | 读文件 |
+| `write` | P0 | 写文件 |
+| `edit` | P0 | 改文件 |
+| `bash` | P0 | 执行命令 |
+| `recall` | P1 | 读取记忆 |
+| `remember` | P1 | 写入重要记忆 |
+| `reflect` | P1 | 反思 |
 
-| 特性 | 为什么不做 |
-|------|-----------|
-| **MCP 支持** | overhead 太大，用 CLI 工具代替 |
-| **内置 to-dos** | 用文件代替 (TODO.md) |
-| **Plan mode** | 用文件代替 (PLAN.md) |
-| **Background bash** | 用 tmux 代替 |
-| **Sub-agents** | 用 bash 运行自己代替 |
-| **安全检查** | YOLO 模式，用户自己负责 |
+### 7.2 反射工具 (M1)
 
-### 7.2 一切皆文件
-
-- 任务列表 → `TODO.md`
-- 计划 → `PLAN.md`
-- 反思 → `REFLECTIONS.md`
-- 上下文 → `CONTEXT.md`
-
-Agent 不需要内置状态，所有状态都在文件里。
+```typescript
+// reflect: 反思上一次的尝试
+const reflectTool = {
+  name: 'reflect',
+  description: '反思上一次的尝试结果',
+  parameters: {
+    attempt: 'string',
+    result: 'string',
+    context: 'string?'
+  },
+  execute: async (args) => {
+    // 写入反思文件
+    await writeFile('REFLECTIONS.md', formatReflection(args));
+    return '已记录反思';
+  }
+};
+```
 
 ---
 
-## 八、下一步
+## 八、MVP 交付标准
 
-- [x] 设计采用 pi-mono 4 工具原则
+### M1 交付
+
+- [ ] 4 工具集可用
+- [ ] Agent Loop 循环直到完成
+- [ ] 极简 system prompt (< 1000 tokens)
+- [ ] 反思写入文件
+
+### M2 交付
+
+- [ ] 双层 Agent 架构
+- [ ] 表层/深层通信
+- [ ] 简单激素系统 (多巴胺+皮质醇)
+- [ ] 激素影响行为
+- [ ] 基础记忆判断
+
+---
+
+## 九、项目管理
+
+### 当前任务 (M1 → M2)
+
 - [ ] 实现核心工具 (read, write, edit, bash)
-- [ ] 设计极简 system prompt (< 1000 tokens)
-- [ ] 实现 Agent Loop (循环直到完成，无 max steps)
-- [ ] 集成激素系统 (confidence)
-- [ ] 用户确认机制 (YOLO vs 安全模式)
-
----
-
-## 九、参考
-
-- **Pi-mono** (Mario Zechner): https://github.com/badlogic/pi-mono
-- **Blog Post**: https://mariozechner.at/posts/2025-11-30-pi-coding-agent/
-- Novalife CORE_DESIGN: 单一心智、激素系统
-- OpenClaw: 工具注册、执行模式
-
----
-
-## 九、项目管理 (Plan/TODO)
-
-### 当前任务
-
-- [ ] 实现核心工具 (read, write, edit, bash)
-- [ ] 设计极简 system prompt
 - [ ] 实现 Agent Loop
-- [ ] 集成测试验证
-- [ ] 人工确认机制
+- [ ] 设计双层架构
+- [ ] 实现 Observer Agent
+- [ ] 实现简单激素系统
+- [ ] 实现记忆判断
 
-### 完成标准
+### 里程碑
 
-- [ ] Agent 能自己运行测试
-- [ ] Agent 能自己修复简单 bug
-- [ ] 反思能写入文件
+| 阶段 | 任务 |
+|------|------|
+| M1 | 自举工具 |
+| M2 | 双层 + 激素 + 记忆 MVP |
 
 ### 风险与依赖
 
 | 风险 | 影响 | 应对 |
 |------|------|------|
 | LLM 能力不足 | 无法自举 | 换用更强模型 |
-| 安全问题 | 数据泄露 | YOLO 模式，用户负责 |
+| 双层通信延迟 | 响应慢 | 异步处理 |
+| 激素模拟不准 | 行为奇怪 | 人工调优 |
 
 ---
 
-## 十、变更记录
+## 十、参考
 
-| 日期 | 版本 | 变更 |
-|------|------|------|
-| 2026-03-06 | v1.0 | 初始版本 |
+- MANIFESTO.md (v1.2)
+- ROADMAP.md (v1.2)
+- Pi-mono: 4 工具原则
 
 ---
+
+**方案版本**: v1.0
+**最后更新**: 2026-03-07
