@@ -1,8 +1,10 @@
 # Novalife 自举工具 MVP 设计
 
-> 版本: v1.0
+> 版本: v1.1
 > 日期: 2026-03-06
 > 状态: 初稿
+>
+> 核心参考: **Pi-mono** (Mario Zechner) - "If I don't need it, it won't be built"
 
 ---
 
@@ -147,22 +149,34 @@ interface Attempt {
 
 ## 三、MVP 工具设计
 
-### 3.1 工具列表
+> **核心理念**: 来自 pi-mono 的启示 —— 4 个工具足以构建有效的 coding agent。
+> 
+> "As it turns out, these four tools are all you need for an effective coding agent." — badlogic
+>
+> 系统 prompt + 工具定义 < 1000 tokens。
 
-| 工具名 | 功能 | 优先级 |
-|--------|------|--------|
-| `read_file` | 读取文件内容 | P0 |
-| `write_file` | 写入/修改文件 | P0 |
-| `list_dir` | 列出目录内容 | P0 |
-| `execute` | 执行命令/代码 | P0 |
-| `git_diff` | 查看 Git 变更 | P1 |
-| `git_commit` | 提交更改 | P1 |
-| `test` | 运行测试 | P1 |
-| `reflect` | 反思学习 | P2 |
+### 3.1 最小工具集 (Pi-mono 风格)
 
-### 3.2 P0: 基础文件系统
+| 工具名 | 功能 | 说明 |
+|--------|------|------|
+| `read` | 读取文件 | 支持文本和图片 |
+| `write` | 写入文件 | 覆盖或创建 |
+| `edit` | 编辑文件 | 精确替换 |
+| `bash` | 执行命令 | 返回 stdout/stderr |
 
-#### read_file
+**为什么只需要这 4 个？**
+- 模型知道如何使用 bash (ls, grep, find 等)
+- read/write/edit 是模型训练时使用的标准工具
+- 其他工具都可以通过 bash + CLI 实现
+
+### 3.2 扩展: 只读工具 (可选)
+
+如果需要限制权限，可以启用：
+- `grep`, `find`, `ls` — 但默认禁用
+
+### 3.3 P0: 基础文件系统
+
+#### read
 
 ```typescript
 interface ReadFileInput {
@@ -470,23 +484,51 @@ export async function* bootstrapLoop(
 
 ---
 
-## 七、下一步
+## 七、Pi-mono 哲学总结
 
-- [ ] 实现 P0 工具 (read_file, write_file, list_dir, execute)
-- [ ] 实现 P1 工具 (git_diff, git_commit, test)
-- [ ] 实现基础 Agent Loop
-- [ ] 集成激素系统 (confidence 激素)
-- [ ] 添加用户确认机制
+> "If I don't need it, it won't be built. And I don't need a lot of things." — badlogic
+
+### 7.1 不做的事情
+
+| 特性 | 为什么不做 |
+|------|-----------|
+| **MCP 支持** | overhead 太大，用 CLI 工具代替 |
+| **内置 to-dos** | 用文件代替 (TODO.md) |
+| **Plan mode** | 用文件代替 (PLAN.md) |
+| **Background bash** | 用 tmux 代替 |
+| **Sub-agents** | 用 bash 运行自己代替 |
+| **安全检查** | YOLO 模式，用户自己负责 |
+
+### 7.2 一切皆文件
+
+- 任务列表 → `TODO.md`
+- 计划 → `PLAN.md`
+- 反思 → `REFLECTIONS.md`
+- 上下文 → `CONTEXT.md`
+
+Agent 不需要内置状态，所有状态都在文件里。
 
 ---
 
-## 八、参考
+## 八、下一步
 
-- Pi-mono: 严格类型、模块化
+- [x] 设计采用 pi-mono 4 工具原则
+- [ ] 实现核心工具 (read, write, edit, bash)
+- [ ] 设计极简 system prompt (< 1000 tokens)
+- [ ] 实现 Agent Loop (循环直到完成，无 max steps)
+- [ ] 集成激素系统 (confidence)
+- [ ] 用户确认机制 (YOLO vs 安全模式)
+
+---
+
+## 九、参考
+
+- **Pi-mono** (Mario Zechner): https://github.com/badlogic/pi-mono
+- **Blog Post**: https://mariozechner.at/posts/2025-11-30-pi-coding-agent/
 - Novalife CORE_DESIGN: 单一心智、激素系统
 - OpenClaw: 工具注册、执行模式
 
 ---
 
-**文档版本**: v1.0
+**文档版本**: v1.1
 **最后更新**: 2026-03-06
